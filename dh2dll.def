@@ -1,0 +1,3 @@
+LIBRARY dh2.osl
+EXPORTS
+	_DH2Init =DH2Init
