@@ -39,11 +39,20 @@ LGDIR = ..\lg
 
 DEFINES = -DWINVER=0x0400 -D_WIN32_WINNT=0x0400 -DWIN32_LEAN_AND_MEAN
 INCLUDES = -I. -I$(LGDIR)
-LIBS = lg.lib uuid.lib
+LIBS = uuid.lib
 LDFLAGS = -q -aa -Tpd -c -b:0x12200000
 LIBDIRS = -L.;$(LGDIR);$(BCCROOT)\lib;$(BCCROOT)\lib\psdk
 CXXFLAGS =  -q -P -tWD -tWM
 RCFLAGS = -r
+!ifdef DEBUG
+CDEBUG = -v -y -O0 -DDEBUG=1
+LDDEBUG = -v
+LGLIB = lg-d.lib
+!else
+CDEBUG = -v- -O2 -5 -OS -DNDEBUG
+LDDEBUG = -v-
+LGLIB = lg.lib
+!endif
 
 BCC32STARTUP = c0d32.obj
 BCC32RTLIB = cw32mt.lib
@@ -59,10 +68,10 @@ LIBSRCS = dh2lib.cpp
 LIBOBJS = dh2lib.obj
 
 .c.obj:
-	$(CC) $(CXXFLAGS) $(DEFINES) $(INCLUDES) -c $<
+	$(CC) $(CXXFLAGS) $(CDEBUG) $(DEFINES) $(INCLUDES) -c $<
 
 .cpp.obj:
-	$(CC) $(CXXFLAGS) $(DEFINES) $(INCLUDES) -c $<
+	$(CC) $(CXXFLAGS) $(CDEBUG) $(DEFINES) $(INCLUDES) -c $<
 
 .rc.res:
 	$(BRC32) -r $<
@@ -73,7 +82,7 @@ clean:
 	del /q $(ALL) $(DLLOBJS) $(DLLRES) $(LIBOBJS) $(BCCJUNK)
 
 dh2.osl: $(DLLOBJS) $(DLLRES)
-	$(ILINK32) $(LDFLAGS) $(LIBDIRS) $(BCC32STARTUP) $(DLLOBJS), $@ ,,import32.lib $(LIBS) $(BCC32RTLIB) , , $(DLLRES)
+	$(ILINK32) $(LDFLAGS) $(LDDEBUG) $(LIBDIRS) $(BCC32STARTUP) $(DLLOBJS), $@ ,,import32.lib $(LGLIB) $(LIBS) $(BCC32RTLIB) , , $(DLLRES)
 
 dh2.lib: $(LIBOBJS)
 	del /q $@

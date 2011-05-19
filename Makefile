@@ -33,11 +33,20 @@ RC = windres
 
 DEFINES = -DWINVER=0x0400 -D_WIN32_WINNT=0x0400 -DWIN32_LEAN_AND_MEAN
 INCLUDES = -I. -I$(LGDIR)
-LIBS = -llg -luuid
+LIBS = -luuid
 ARFLAGS = rc
 LDFLAGS = -mwindows -mdll -L$(LGDIR)
-CFLAGS = -W -Wall -masm=intel -std=gnu++0x -O2
+CFLAGS = -W -Wall -masm=intel -std=gnu++0x
 DLLFLAGS = --add-underscore
+ifdef DEBUG
+CDEBUG = -g -O0
+LDDEBUG = -g
+LGLIB = -llg-d
+else
+CDEBUG = -O2
+LDDEBUG =
+LGLIB = -llg
+endif
 
 ALL = dh2.osl libdh2.a
 
@@ -50,10 +59,10 @@ LIBSRCS = dh2lib.cpp
 LIBOBJS = dh2lib.o
 
 %.o: %.c
-	$(CC) $(CFLAGS) $(DEFINES) $(INCLUDES) -o $@ -c $<
+	$(CC) $(CFLAGS) $(CDEBUG) $(DEFINES) $(INCLUDES) -o $@ -c $<
 
 %.o: %.cpp
-	$(CC) $(CFLAGS) $(DEFINES) $(INCLUDES) -o $@ -c $<
+	$(CC) $(CFLAGS) $(CDEBUG) $(DEFINES) $(INCLUDES) -o $@ -c $<
 
 all:	$(ALL)
 
@@ -67,7 +76,7 @@ dh2_exp.o: dh2dll.o
 	$(DLLTOOL) $(DLLFLAGS) --dllname dh2.osl --output-exp $@ $^
 
 dh2.osl: $(DLLOBJS)
-	$(LD) $(LDFLAGS) -Wl,--image-base=0x12200000 -o $@ $^ $(LIBS)
+	$(LD) $(LDFLAGS) $(LDDEBUG) -Wl,--image-base=0x12200000 -o $@ $^ $(LGLIB) $(LIBS)
 
 libdh2.a: $(LIBOBJS)
 	$(AR) $(ARFLAGS) $@ $?

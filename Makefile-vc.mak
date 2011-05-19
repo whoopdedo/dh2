@@ -28,12 +28,21 @@ LGDIR = ..\lg
 
 DEFINES = -DWINVER=0x0400 -D_WIN32_WINNT=0x0400 -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS
 INCLUDES = -I. -I$(LGDIR)
-LIBS = lg.lib uuid.lib $(baselibs)
+LIBS = uuid.lib $(baselibs)
 LDFLAGS = -nologo $(dlllflags) -c -base:0x12200000
 LIBDIRS =
-CFLAGS = $(cflags) -MT -Ox -DNDEBUG -nologo -W3
+CFLAGS = $(cflags) -nologo -W3
 CXXFLAGS = $(CFLAGS) -TP -EHsc
 LIBFLAGS = -nologo
+!ifdef DEBUG
+CDEBUG = -MTd -Od -DDEBUG=1
+LDDEBUG = -DEBUG
+LGLIB = lg-d.lib
+!else
+CDEBUG = -MT -Ox -DNDEBUG
+LDDEBUG = -RELEASE
+LGLIB = lg.lib
+!endif
 
 ALL = dh2.osl dh2.lib
 
@@ -45,10 +54,10 @@ LIBSRCS = dh2lib.cpp
 LIBOBJS = dh2lib.obj
 
 .c.obj:
-	$(cc) $(CFLAGS) $(DEFINES) $(INCLUDES) -c $<
+	$(cc) $(CFLAGS) $(CDEBUG) $(DEFINES) $(INCLUDES) -c $<
 
 .cpp.obj:
-	$(cc) $(CXXFLAGS) $(DEFINES) $(INCLUDES) -c $<
+	$(cc) $(CXXFLAGS) $(CDEBUG) $(DEFINES) $(INCLUDES) -c $<
 
 .rc.res:
 	$(rc) $(rcflags) $<
@@ -59,7 +68,7 @@ clean:
 	-del /q $(ALL) $(DLLOBJS) $(DLLRES) $(LIBOBJS)
 
 dh2.osl: $(DLLOBJS) $(DLLRES)
-	$(link) $(LDFLAGS) $(LIBDIRS) -out:$@ $** $(LIBS)
+	$(link) $(LDFLAGS) $(LDDEBUG) $(LIBDIRS) -out:$@ $** $(LGLIB) $(LIBS)
 
 dh2.lib: $(LIBOBJS)
 	$(implib) $(libflags) -out:$@ $?
