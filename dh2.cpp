@@ -141,7 +141,7 @@ void cDH2ScriptService::HandleRelation(sRelationListenMsg* pRelMsg)
 			DoRelationNotify(l->first, l->second, event, pRelDesc->szName, pRelMsg->lLink, pRelMsg->source, pRelMsg->dest, pRel);
 		}
 	}
-	m_reltree.find(objprop(pRelDesc->szName,0));
+	i = m_reltree.find(objprop(pRelDesc->szName,0));
 	if (i != m_reltree.end())
 	{
 		objlist::const_iterator l = i->second.begin();
