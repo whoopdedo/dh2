@@ -23,14 +23,21 @@
 #include <windows.h>
 
 IMalloc* g_pMalloc = NULL;
+MPrintfProc g_pfnMPrintf = NULL;
+
+static int __cdecl NullPrintf(const char*, ...)
+{
+	return 0;
+}
 
 extern "C" __declspec(dllexport)
-Bool __cdecl ScriptParamInit(IScriptMan* pScriptMan, IMalloc* pMalloc)
+Bool __cdecl ScriptParamInit(IScriptMan* pScriptMan, IMalloc* pMalloc, MPrintfProc pfnMPrintf)
 {
 	try
 	{
 		if (! cScriptParamScriptService::sm_initialized)
 		{
+			g_pfnMPrintf = pfnMPrintf;
 			g_pMalloc = pMalloc;
 			cScriptParamScriptService* pScrParams = new cScriptParamScriptService(pScriptMan);
 			pScriptMan->ExposeService(pScrParams, IID_IScriptParamScriptService);
@@ -50,6 +57,8 @@ BOOL WINAPI DllMain (HINSTANCE h, DWORD dwReason, PVOID pv)
 	if (dwReason == DLL_PROCESS_ATTACH)
 	{
 		::DisableThreadLibraryCalls(h);
+		if (!g_pfnMPrintf)
+			g_pfnMPrintf = NullPrintf;
 		return TRUE;
 	}
 	return TRUE;

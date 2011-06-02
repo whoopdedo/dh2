@@ -83,13 +83,13 @@ interface IScriptParamScriptService : IUnknown
 	STDMETHOD_(IObjectQuery*,QueryObjects)(const char* pszValue, int iDest) PURE;
 };
 DEFINE_GUID(IID_IScriptParamScriptService, 0xCECACA8D, 0x1429, 0x4404, 0xAE, 0xB2, 0x6A, 0xEF, 0xC5, 0x74, 0x46, 0xCF);
-DEFINE_IIDSTRUCT(IScriptParamScriptService,IID_IScriptParamScriptService)
+DEFINE_IIDSTRUCT(IScriptParamScriptService,IID_IScriptParamScriptService);
 
 /*
  * Library Utility Functions
  */
-HMODULE ScriptParamLoadLibrary(void);
-BOOL ScriptParamInitializeService(IScriptMan* pSM, IMalloc* pMalloc);
+HANDLE ScriptParamLoadLibrary(void);
+Bool ScriptParamInitializeService(IScriptMan* pSM, IMalloc* pMalloc);
 
 
 #endif // SCRIPTPARAM_H

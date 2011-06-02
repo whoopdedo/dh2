@@ -74,10 +74,10 @@ public:
 private:
 	SInterface<IStringProperty> m_pDNProp;
 	SInterface<IPositionProperty> m_pPosProp;
-	SInterface<ITraitManager> m_pTraitMan;
-	SInterface<ISimManager> m_pSimMan;
 	SInterface<ILinkManager> m_pLinkMan;
 	SInterface<IObjectSystem> m_pObjMan;
+	SInterface<ITraitManager> m_pTraitMan;
+	SInterface<ISimManager> m_pSimMan;
 
 	tParamCacheMap m_mapParamCache;
 	PropListenerHandle m_hListenerHandle;
@@ -95,7 +95,7 @@ private:
 	void Parse(tParamEntryMap& cache, const char* pszDN);
 	std::string Unparse(tParamEntryMap& cache);
 	tParamEntryMap* Read(int iObj);
-	const std::string* ReadParam(int iObj, const std::string& sParamName)
+	const std::string* ReadParam(int iObj, const std::string& sParamName);
 	void Write(int iObj);
 	const std::string* Retrieve(int iObj, const std::string& sParamName);
 	const std::string* RetrieveSingle(int iObj, const std::string& sParamName);
@@ -107,5 +107,8 @@ private:
 	int ObjectNamed(const char* pszName, int iDefault);
 	int FindClosest(int iObj, const char* pszName);
 };
+
+typedef int (__cdecl *MPrintfProc)(const char*, ...);
+extern MPrintfProc g_pfnMPrintf;
 
 #endif // PARAMS_H

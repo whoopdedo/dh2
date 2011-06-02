@@ -88,7 +88,7 @@ paramexp.o: paramdll.o
 	$(DLLTOOL) $(DLLFLAGS) --output-exp $@ $^
 
 params.osl: paramexp.o params.o paramdll.o paramres.o
-	$(LD) $(LDFLAGS) -Wl,--image-base=0x12300000 -o $@ $^ $(LIBS)
+	$(LD) $(LDFLAGS) -Wl,--image-base=0x12300000 -o $@ $^ $(LGLIB) $(LIBS)
 
 libscriptparam.a: paramlib.o
 	$(AR) $(ARFLAGS) $@ $?
@@ -100,7 +100,7 @@ dh2dll.o: dh2dll.cpp dh2.h darkhook.h
 
 dh2lib.o: dh2lib.cpp darkhook.h
 
-params.o: params.cpp params.h scriptparam.h strless_nocase.h
+params.o: params.cpp params.h scriptparam.h strnocase.h
 
 paramdll.o: paramdll.cpp params.h scriptparam.h
 

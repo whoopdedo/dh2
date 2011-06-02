@@ -28,9 +28,12 @@
 #define SCRIPTPARAM_MODULENAME "PARAMS.OSL"
 #define SCRIPTPARAM_INITPROCNAME "_ScriptParamInit"
 
-typedef Bool (__cdecl *InitProc)(IScriptMan* pScriptMan, IMalloc* pMalloc);
+typedef int (__cdecl *MPrintfProc)(const char*, ...);
+extern MPrintfProc g_pfnMPrintf;
 
-HMODULE ScriptParamLoadLibrary(void)
+typedef Bool (__cdecl *InitProc)(IScriptMan* pScriptMan, IMalloc* pMalloc, MPrintfProc pfnMPrintf);
+
+HANDLE ScriptParamLoadLibrary(void)
 {
 	HMODULE hDLL = ::GetModuleHandleA(SCRIPTPARAM_MODULENAME);
 	if (!hDLL)
@@ -40,7 +43,7 @@ HMODULE ScriptParamLoadLibrary(void)
 
 Bool ScriptParamInitializeService(IScriptMan* pSM, IMalloc* pMalloc)
 {
-	HMODULE hDLL = ScriptParamLoadLibrary();
+	HMODULE hDLL = static_cast<HMODULE>(ScriptParamLoadLibrary());
 	if (!hDLL)
 		return FALSE;
 
@@ -48,5 +51,5 @@ Bool ScriptParamInitializeService(IScriptMan* pSM, IMalloc* pMalloc)
 	if (!pfnInit)
 		return FALSE;
 
-	return pfnInit(pSM, pMalloc);
+	return pfnInit(pSM, pMalloc, g_pfnMPrintf);
 }

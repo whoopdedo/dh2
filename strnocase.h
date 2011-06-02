@@ -47,23 +47,25 @@ struct strnocase_less
 
 struct strnocase_hash
 {
-	static char tolower(char __c) const
+	static char tolower(char __c)
 		{ return (__c >= 'A' && __c <= 'Z') ? __c | 0x20 : __c; }
-	size_t operator() const std::string& __str) const
+	size_t operator()(const std::string& __str) const
 	{
 		size_t __h = 0;
-		const char* __c == __str.c_str();
+		const char* __c = __str.c_str();
 		for (size_t __l=__str.size()+1; __l; --__l)
 			__h = (__h * 131) + tolower(*__c++);
 		return __h;
 	}
-	size_t operator() const char* __str) const
+	size_t operator()(const char* __str) const
 	{
 		size_t __h = 0;
-		const char* __c == __str;
+		const char* __c = __str;
 		do
 			__h = (__h * 131) + tolower(*__c);
 		while (*__c++);
 		return __h;
 	}
 };
+
+#endif

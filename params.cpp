@@ -25,6 +25,7 @@
 #include <lg/propdefs.h>
 
 #include <algorithm>
+#include <memory>
 #include <cstring>
 #include <cctype>
 
@@ -40,6 +41,9 @@ bool cScriptParamScriptService::sm_initialized = false;
 
 int __cdecl cScriptParamScriptService::SimListener(const sDispatchMsg* pSimMsg, const sDispatchListenerDesc* pData)
 {
+	g_pfnMPrintf("DH2(%s): SimMsg %lu %lu\n",
+		reinterpret_cast<cScriptParamScriptService*>(pData->pData)->m_bEnabled?"on":"off",
+		pSimMsg->dwEventId, pSimMsg->dwDispatchId);
 	if (sm_initialized)
 	{
 		switch (pSimMsg->dwEventId)
@@ -57,6 +61,9 @@ int __cdecl cScriptParamScriptService::SimListener(const sDispatchMsg* pSimMsg, 
 
 void __stdcall cScriptParamScriptService::PropertyListener(sPropertyListenMsg* pPropMsg, PropListenerData pData)
 {
+	g_pfnMPrintf("DH2(%s): PropMsg %u %08lX %d:%d\n",
+		reinterpret_cast<cScriptParamScriptService*>(pData)->m_bEnabled?"on":"off",
+		pPropMsg->event, reinterpret_cast<ulong>(pPropMsg->pData), pPropMsg->iObjId, pPropMsg->iArchetype);
 	if (sm_initialized)
 	{
 		if (!(pPropMsg->event & 8))
@@ -89,7 +96,7 @@ cScriptParamScriptService::cScriptParamScriptService(IUnknown* pIFace)
 		throw no_interface("IID_IStringProperty");
 	m_pDNProp = pDNProp;
 
-	sm_simlistenerdesc.pData = reinterpret_cast<void*>(this);
+	sm_simlistenerdesc.pData = static_cast<void*>(this);
 	m_pSimMan->Listen(&sm_simlistenerdesc);
 	m_hListenerHandle = m_pDNProp->Listen(kPropertyFull, PropertyListener, reinterpret_cast<PropListenerData>(this));
 
@@ -512,7 +519,7 @@ static char* strqsep(char** str)
 	char* p = *str;
 	while (*p)
 	{
-		if (*p == '\"' || *p = '\'')
+		if (*p == '\"' || *p == '\'')
 		{
 			char* t = p;
 			do
