@@ -49,10 +49,10 @@ int __cdecl cScriptParamScriptService::SimListener(const sDispatchMsg* pSimMsg, 
 		switch (pSimMsg->dwEventId)
 		{
 			case kSimStart:
-				reinterpret_cast<cScriptParamScriptService*>(pData->pData)->Enable();
+				//reinterpret_cast<cScriptParamScriptService*>(pData->pData)->Enable();
 				break;
 			case kSimStop:
-				reinterpret_cast<cScriptParamScriptService*>(pData->pData)->Disable();
+				reinterpret_cast<cScriptParamScriptService*>(pData->pData)->Reset();
 				break;
 		}
 	}
@@ -69,6 +69,10 @@ void __stdcall cScriptParamScriptService::PropertyListener(sPropertyListenMsg* p
 		if (!(pPropMsg->event & 8))
 		{
 			reinterpret_cast<cScriptParamScriptService*>(pData)->Touch(pPropMsg->iObjId);
+		}
+		else
+		{
+			reinterpret_cast<cScriptParamScriptService*>(pData)->Reset();
 		}
 	}
 }
@@ -101,7 +105,7 @@ cScriptParamScriptService::cScriptParamScriptService(IUnknown* pIFace)
 	m_hListenerHandle = m_pDNProp->Listen(kPropertyFull, PropertyListener, reinterpret_cast<PropListenerData>(this));
 
 	m_iUpdatingObj = 0;
-	m_bEnabled = false;
+	m_bEnabled = true;
 
 	sm_initialized = true;
 }
