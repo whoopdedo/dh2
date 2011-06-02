@@ -521,6 +521,7 @@ STDMETHODIMP_(IObjectQuery*) cScriptParamScriptService::QueryObjects(const char*
 static char* strqsep(char** str)
 {
 	char* p = *str;
+	if (!p) return NULL;
 	while (*p)
 	{
 		if (*p == '\"' || *p == '\'')
