@@ -97,6 +97,7 @@ private:
 	tParamEntryMap* Read(int iObj);
 	const std::string* ReadParam(int iObj, const std::string& sParamName);
 	void Write(int iObj);
+	const std::string* RetrieveCached(int iObj, const std::string& sParamName);
 	const std::string* Retrieve(int iObj, const std::string& sParamName);
 	const std::string* RetrieveSingle(int iObj, const std::string& sParamName);
 	void Update(int iObj, const std::string& sParamName, const std::string* sParamValue);

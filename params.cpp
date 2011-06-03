@@ -734,7 +734,7 @@ void cScriptParamScriptService::Write(int iObj)
 	m_iUpdatingObj = 0;
 }
 
-const string* cScriptParamScriptService::Retrieve(int iObj, const string& sParamName)
+const string* cScriptParamScriptService::RetrieveCached(int iObj, const string& sParamName)
 {
 	const string* psParam = NULL;
 	if (m_bEnabled)
@@ -757,20 +757,23 @@ const string* cScriptParamScriptService::Retrieve(int iObj, const string& sParam
 	{
 		psParam = ReadParam(iObj, sParamName);
 	}
+	return psParam;
+}
 
-	if (!psParam)
+const string* cScriptParamScriptService::Retrieve(int iObj, const string& sParamName)
+{
+	const string* psParam = NULL;
+	// Trait manager does the recursion for us.
+	// How convenient that the query object is included in the result set
+	// (But only for MetaProp+Full, go figure.)
+	SInterface<IObjectQuery> pInheritance = m_pTraitMan->Query(iObj, kTraitQueryMetaProps|kTraitQueryFull);
+	if (!pInheritance)
+		return NULL;
+	for (; ! pInheritance->Done(); pInheritance->Next())
 	{
-		// Recursive depth-first query.
-		SInterface<IObjectQuery> pInheritance = m_pTraitMan->Query(iObj, kTraitQueryMetaProps);
-		if (!pInheritance)
-			return NULL;
-		while (! pInheritance->Done())
-		{
-			psParam = Retrieve(pInheritance->Object(), sParamName);
-			if (psParam)
-				break;
-			pInheritance->Next();
-		}
+		psParam = RetrieveCached(pInheritance->Object(), sParamName);
+		if (psParam)
+			break;
 	}
 	if (psParam)
 	{
@@ -783,28 +786,7 @@ const string* cScriptParamScriptService::Retrieve(int iObj, const string& sParam
 
 const string* cScriptParamScriptService::RetrieveSingle(int iObj, const string& sParamName)
 {
-	const string* psParam = NULL;
-	if (m_bEnabled)
-	{
-		tParamCacheMap::const_iterator cached_entry = m_mapParamCache.find(iObj);
-		if (cached_entry != m_mapParamCache.end())
-		{
-			tParamEntryMap::const_iterator param_entry = cached_entry->second.find(sParamName);
-			if (param_entry != cached_entry->second.end())
-			{
-				psParam = &(param_entry->second);
-			}
-		}
-		else
-		{
-			psParam = ReadParam(iObj, sParamName);
-		}
-	}
-	else // not enabled
-	{
-		psParam = ReadParam(iObj, sParamName);
-	}
-
+	const string* psParam = RetrieveCached(iObj, sParamName);
 	if (psParam)
 	{
 		// Check for the block-inheritance sentinal.
