@@ -260,6 +260,66 @@ STDMETHODIMP cScriptParamScriptService::GetVec(int iObjId, const char* pszName, 
 	}
 }
 
+STDMETHODIMP_(int) cScriptParamScriptService::GetTime(int iObjId, const char* pszName, int iDefault)
+{
+	try
+	{
+		const string* psParam = Retrieve(iObjId, pszName);
+		if (!psParam)
+			return iDefault;
+		return ToTime(psParam->c_str());
+	}
+	catch (...)
+	{
+		return 0;
+	}
+}
+
+STDMETHODIMP_(int) cScriptParamScriptService::GetColor(int iObjId, const char* pszName, int iDefault)
+{
+	try
+	{
+		const string* psParam = Retrieve(iObjId, pszName);
+		if (!psParam)
+			return iDefault;
+		return ToColor(psParam->c_str());
+	}
+	catch (...)
+	{
+		return 0;
+	}
+}
+
+STDMETHODIMP_(int) cScriptParamScriptService::GetObject(int iObjId, const char* pszName, int iDest, int iSource, int iDefault)
+{
+	try
+	{
+		const string* psParam = Retrieve(iObjId, pszName);
+		if (!psParam)
+			return iDefault;
+		return ToObject(psParam->c_str(), iDest, iSource);
+	}
+	catch (...)
+	{
+		return 0;
+	}
+}
+
+STDMETHODIMP_(IObjectQuery*) cScriptParamScriptService::GetManyObjects(int iObjId, const char* pszName, int iDest)
+{
+	try
+	{
+		const string* psParam = Retrieve(iObjId, pszName);
+		if (!psParam)
+			return new cConstObjQuery(0);
+		return QueryObjects(psParam->c_str(), iDest);
+	}
+	catch (...)
+	{
+		return NULL;
+	}
+}
+
 STDMETHODIMP cScriptParamScriptService::Set(int iObjId, const char* pszName, const cMultiParm& mpValue)
 {
 	try

@@ -54,6 +54,14 @@ interface IScriptParamScriptService : IUnknown
 	STDMETHOD_(Bool,GetBool)(int iObjId, const char* pszName, Bool bDefault = FALSE) PURE;
 	// Fetch parameter as vector.
 	STDMETHOD(GetVec)(int iObjId, const char* pszName, cScrVec& vValue) PURE;
+	// Fetch parameter and convert using ToTime.
+	STDMETHOD_(int,GetTime)(int iObjId, const char* pszName, int iDefault = 0) PURE;
+	// Fetch parameter and convert using ToColor.
+	STDMETHOD_(int,GetColor)(int iObjId, const char* pszName, int iDefault = 0) PURE;
+	// Fetch parameter and convert using ToObject.
+	STDMETHOD_(int,GetObject)(int iObjId, const char* pszName, int iDest, int iSource = 0, int iDefault = 0) PURE;
+	// Fetch parameter and convert using QueryObjects.
+	STDMETHOD_(IObjectQuery*,GetManyObjects)(int iObjId, const char* pszName, int iDest) PURE;
 	// Modify parameter.
 	STDMETHOD(Set)(int iObjId, const char* pszName, const cMultiParm& mpValue) PURE;
 	// Mark a parameter as not-set without deleting from an archetype.

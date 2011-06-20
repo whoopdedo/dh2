@@ -57,6 +57,10 @@ public:
 	STDMETHOD_(float,GetFloat)(int iObjId, const char* pszName, float fDefault = 0);
 	STDMETHOD_(Bool,GetBool)(int iObjId, const char* pszName, Bool bDefault = FALSE);
 	STDMETHOD(GetVec)(int iObjId, const char* pszName, cScrVec& vValue);
+	STDMETHOD_(int,GetTime)(int iObjId, const char* pszName, int iDefault = 0);
+	STDMETHOD_(int,GetColor)(int iObjId, const char* pszName, int iDefault = 0);
+	STDMETHOD_(int,GetObject)(int iObjId, const char* pszName, int iDest, int iSource = 0, int iDefault = 0);
+	STDMETHOD_(IObjectQuery*,GetManyObjects)(int iObjId, const char* pszName, int iDest);
 	STDMETHOD(Set)(int iObjId, const char* pszName, const cMultiParm& mpValue);
 	STDMETHOD(Unset)(int iObjId, const char* pszName);
 	STDMETHOD(Delete)(int iObjId, const char* pszName);
