@@ -40,6 +40,7 @@
 #include <unordered_map>
 #include <string>
 #include "strnocase.h"
+#include <random>
 
 class cScriptParamScriptService : public cInterfaceImp<IScriptParamScriptService>
 {
@@ -79,6 +80,7 @@ private:
 	SInterface<ITraitManager> m_pTraitMan;
 	SInterface<ISimManager> m_pSimMan;
 
+	std::default_random_engine m_rand;
 	tParamCacheMap m_mapParamCache;
 	PropListenerHandle m_hListenerHandle;
 	int m_iUpdatingObj;
@@ -107,6 +109,8 @@ private:
 
 	int ObjectNamed(const char* pszName, int iDefault);
 	int FindClosest(int iObj, const char* pszName);
+	int FindOneLink(int iFrom, const char *pszLink);
+	int FindAnyLink(int iFrom, const char *pszLink);
 };
 
 typedef int (__cdecl *MPrintfProc)(const char*, ...);

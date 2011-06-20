@@ -22,12 +22,15 @@
 #include "params.h"
 
 #include <lg/interface.h>
+#include <lg/links.h>
 #include <lg/propdefs.h>
 
 #include <algorithm>
 #include <memory>
+#include <vector>
 #include <cstring>
 #include <cctype>
+#include <ctime>
 
 using namespace std;
 
@@ -103,6 +106,8 @@ cScriptParamScriptService::cScriptParamScriptService(IUnknown* pIFace)
 	sm_simlistenerdesc.pData = static_cast<void*>(this);
 	m_pSimMan->Listen(&sm_simlistenerdesc);
 	m_hListenerHandle = m_pDNProp->Listen(kPropertyFull, PropertyListener, reinterpret_cast<PropListenerData>(this));
+
+	m_rand.seed(time(NULL));
 
 	m_iUpdatingObj = 0;
 	m_bEnabled = true;
@@ -425,6 +430,44 @@ STDMETHODIMP_(int) cScriptParamScriptService::ToColor(const char* pszValue)
 	return 0;
 }
 
+int cScriptParamScriptService::FindOneLink(int iFrom, const char* pszLink)
+{
+	SInterface<IRelation> pRel = m_pLinkMan->GetRelationNamed(pszLink);
+	if (pRel)
+	{
+		SInterface<ILinkQuery> pLQ = pRel->Query(iFrom, 0);
+		if (pLQ && !pLQ->Done())
+		{
+			sLink sl;
+			pLQ->Link(&sl);
+			return sl.dest;
+		}
+	}
+	return 0;
+}
+
+int cScriptParamScriptService::FindAnyLink(int iFrom, const char* pszLink)
+{
+	SInterface<IRelation> pRel = m_pLinkMan->GetRelationNamed(pszLink);
+	if (pRel)
+	{
+		vector<long> vLinks;
+		SInterface<ILinkQuery> pLQ = pRel->Query(iFrom, 0);
+		if (pLQ) for (; !pLQ->Done(); pLQ->Next())
+		{
+			vLinks.push_back(pLQ->ID());
+		}
+		if (!vLinks.empty())
+		{
+			sLink sl;
+			long link = vLinks.at(uniform_int_distribution<size_t>(0, vLinks.size()-1)(m_rand));
+			pRel->Get(link, &sl);
+			return sl.dest;
+		}
+	}
+	return 0;
+}
+
 int cScriptParamScriptService::FindClosest(int iObj, const char* pszName)
 {
 	int iFound = 0;
@@ -482,19 +525,32 @@ STDMETHODIMP_(int) cScriptParamScriptService::ToObject(const char* pszValue, int
 	{
 		if (!pszValue || !*pszValue)
 			return iDest;
-		int obj;
-		if (pszValue[0] == '^')
+		int obj = 0;
+		switch (pszValue[0])
 		{
+		case '^':
 			obj = FindClosest(iDest, pszValue+1);
-		}
-		else
-		{
+			break;
+		case '&':
+			if (pszValue[1] == '?')
+				obj = FindAnyLink(iDest, pszValue+2);
+			else
+				obj = FindOneLink(iDest, pszValue+1);
+			break;
+		case '%':
+			if (pszValue[1] == '?')
+				obj = FindAnyLink(iSource, pszValue+2);
+			else
+				obj = FindOneLink(iSource, pszValue+1);
+			break;
+		default:
 			if (!stricmp(pszValue, "self"))
 				obj = iDest;
 			else if (!stricmp(pszValue, "source"))
 				obj = iSource;
 			else
 				obj = ObjectNamed(pszValue, iDest);
+			break;
 		}
 		return obj;
 	}
