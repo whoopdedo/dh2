@@ -25,6 +25,8 @@
 #include <lg/links.h>
 #include <lg/propdefs.h>
 
+#include "objquery.h"
+
 #include <algorithm>
 #include <memory>
 #include <vector>
@@ -468,15 +470,12 @@ int cScriptParamScriptService::FindAnyLink(int iFrom, const char* pszLink)
 	return 0;
 }
 
-int cScriptParamScriptService::FindClosest(int iObj, const char* pszName)
+int cScriptParamScriptService::FindOneClosest(int iObj, const char* pszName)
 {
 	int iFound = 0;
-	float fDistance = numeric_limits<float>::infinity();
-	cScrVec vObj;
-	sPosition* pos;
-	if (!m_pPosProp->Get(iObj, &pos))
+	ClosestObjFilter filter(iObj, numeric_limits<float>::infinity(), m_pPosProp);
+	if (!filter.Valid())
 		return 0;
-	vObj = pos->Location;
 	int iArc = m_pObjMan->GetObjectNamed(pszName);
 	if (iArc == 0)
 		return 0;
@@ -486,22 +485,68 @@ int cScriptParamScriptService::FindClosest(int iObj, const char* pszName)
 	for (; !pQuery->Done(); pQuery->Next())
 	{
 		int obj = pQuery->Object();
-		if (obj > 0)
-		{
-			if (m_pPosProp->Get(obj, &pos))
-			{
-				if (pos->Cell == -1)
-					continue;
-				float dist = (vObj - pos->Location).MagSquared();
-				if (dist < fDistance)
-				{
-					fDistance = dist;
-					iFound = obj;
-				}
-			}
-		}
+		if (filter.UpdateIfCloser(obj))
+			iFound = obj;
 	}
 	return iFound;
+}
+
+IObjectQuery* cScriptParamScriptService::FindAllObjects(int iFlags, const char* pszName)
+{
+	int iArc = m_pObjMan->GetObjectNamed(pszName);
+	if (iArc == 0)
+		return NULL;
+	return new cConcreteObjQuery(m_pTraitMan->Query(iArc, iFlags));
+}
+
+IObjectQuery* cScriptParamScriptService::FindAllLinks(int iFrom, const char* pszLink)
+{
+	SInterface<IRelation> pRel = m_pLinkMan->GetRelationNamed(pszLink);
+	if (pRel)
+	{
+		return new cLinkObjQuery(pRel->Query(iFrom, 0));
+	}
+	return NULL;
+}
+
+IObjectQuery* cScriptParamScriptService::FindAllClosest(int iObj, const char* pszName)
+{
+	char* pszDist;
+	char* pszHeight;
+
+	pszDist = strchr(pszName, '<');
+	if (!pszDist)
+		return NULL;
+	float fDistance = strtod(pszName, &pszDist);
+	if (fDistance <= 0)
+		return NULL;
+	while (*pszDist == ' ') ++pszDist;
+	if (*pszDist != '<')
+		return NULL;
+
+	// Add a bit so the filter includes object at the distance limit.
+	fDistance += cScrVec::epsilon;
+	++pszDist;
+	pszHeight = strchr(pszDist, '<');
+	if (pszHeight)
+	{
+		float fHeight = strtod(pszDist, &pszHeight);
+		if (fHeight >= 0 && pszHeight > pszDist)
+		{
+			int iArc = m_pObjMan->GetObjectNamed(pszHeight+1);
+			if (iArc == 0)
+				return new cConstObjQuery(0);
+			IObjectQuery* pQuery = m_pTraitMan->Query(iArc, kTraitQueryFull|kTraitQueryChildren);
+			return new cFilterObjQuery<ClosestZOffsetObjFilter>(pQuery,
+					ClosestZOffsetObjFilter(iObj, fDistance, fHeight, m_pPosProp));
+		}
+	}
+
+	int iArc = m_pObjMan->GetObjectNamed(pszDist);
+	if (iArc == 0)
+		return new cConstObjQuery(0);
+	IObjectQuery* pQuery = m_pTraitMan->Query(iArc, kTraitQueryFull|kTraitQueryChildren);
+	return new cFilterObjQuery<ClosestObjFilter>(pQuery, ClosestObjFilter(iObj, fDistance, m_pPosProp));
 }
 
 int cScriptParamScriptService::ObjectNamed(const char* pszName, int iDefault)
@@ -529,7 +574,7 @@ STDMETHODIMP_(int) cScriptParamScriptService::ToObject(const char* pszValue, int
 		switch (pszValue[0])
 		{
 		case '^':
-			obj = FindClosest(iDest, pszValue+1);
+			obj = FindOneClosest(iDest, pszValue+1);
 			break;
 		case '&':
 			if (pszValue[1] == '?')
@@ -564,7 +609,27 @@ STDMETHODIMP_(IObjectQuery*) cScriptParamScriptService::QueryObjects(const char*
 {
 	try
 	{
-		return NULL;
+		if (!pszValue || !*pszValue)
+			return NULL;
+		IObjectQuery* pQuery;
+		switch (pszValue[0])
+		{
+		case '*':
+			pQuery = FindAllObjects(kTraitQueryChildren, pszValue+1);
+			break;
+		case '@':
+			pQuery = FindAllObjects(kTraitQueryFull|kTraitQueryChildren, pszValue+1);
+			break;
+		case '&':
+			pQuery = FindAllLinks(iDest, pszValue+1);
+			break;
+		default:
+			pQuery = FindAllClosest(iDest, pszValue);
+			if (!pQuery)
+				pQuery = new cConstObjQuery(ToObject(pszValue, iDest, 0));
+			break;
+		}
+		return pQuery;
 	}
 	catch (...)
 	{
@@ -919,4 +984,99 @@ void cScriptParamScriptService::Touch(int iObj)
 void cScriptParamScriptService::Reset(void)
 {
 	m_mapParamCache.clear();
+}
+
+ClosestObjFilter::ClosestObjFilter(int iObj, float fMaxDistance, SInterface<IPositionProperty>& pPosProp)
+	: m_iObj(iObj), m_fMaxSquared(fMaxDistance*fMaxDistance), m_pPosProp(pPosProp)
+{
+	sPosition* pos;
+	if (m_pPosProp->Get(iObj, &pos))
+		m_vPosition = pos->Location;
+	else
+		m_iObj = 0;
+}
+
+float ClosestObjFilter::Distance(int iObj) const
+{
+	sPosition* pos;
+	if (m_pPosProp->Get(iObj, &pos))
+	{
+		if (pos->Cell != -1)
+			return (m_vPosition - pos->Location).MagSquared();
+	}
+	return numeric_limits<float>::infinity();
+}
+
+bool ClosestObjFilter::operator() (int iObj) const
+{
+	if (iObj > 0 && m_iObj != 0)
+	{
+		return (Distance(iObj) < m_fMaxSquared);
+	}
+	return false;
+}
+
+bool ClosestObjFilter::UpdateIfCloser(int iObj)
+{
+	if (iObj > 0 && m_iObj != 0)
+	{
+		float dist = Distance(iObj);
+		if (dist < m_fMaxSquared)
+		{
+			m_fMaxSquared = dist;
+			return true;
+		}
+	}
+	return false;
+}
+
+ClosestZOffsetObjFilter::ClosestZOffsetObjFilter(int iObj, float fMaxDistance, float fMaxHeight, SInterface<IPositionProperty>& pPosProp)
+	: m_iObj(iObj), m_fMaxSquared(fMaxDistance*fMaxDistance), m_fMaxHeight(fMaxHeight), m_pPosProp(pPosProp)
+{
+	sPosition* pos;
+	if (m_pPosProp->Get(iObj, &pos))
+		m_vPosition = pos->Location;
+	else
+		m_iObj = 0;
+}
+
+float ClosestZOffsetObjFilter::Distance(int iObj, float *fHeight) const
+{
+	sPosition* pos;
+	if (m_pPosProp->Get(iObj, &pos))
+	{
+		if (pos->Cell != -1)
+		{
+			cScrVec vDist = (m_vPosition - pos->Location);
+			*fHeight = fabs(vDist.z);
+			vDist.z = 0;
+			return vDist.MagSquared();
+		}
+	}
+	return numeric_limits<float>::infinity();
+}
+
+bool ClosestZOffsetObjFilter::operator() (int iObj) const
+{
+	if (iObj > 0 && m_iObj != 0)
+	{
+		float height;
+		return (Distance(iObj, &height) < m_fMaxSquared && height <= m_fMaxHeight);
+	}
+	return false;
+}
+
+bool ClosestZOffsetObjFilter::UpdateIfCloser(int iObj)
+{
+	if (iObj > 0 && m_iObj != 0)
+	{
+		float height;
+		float dist = Distance(iObj, &height);
+		if (dist < m_fMaxSquared && height <= m_fMaxHeight)
+		{
+			m_fMaxSquared = dist;
+			return true;
+		}
+	}
+	return false;
 }

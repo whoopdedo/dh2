@@ -108,9 +108,57 @@ private:
 	void Reset(void);
 
 	int ObjectNamed(const char* pszName, int iDefault);
-	int FindClosest(int iObj, const char* pszName);
+	int FindOneClosest(int iObj, const char* pszName);
 	int FindOneLink(int iFrom, const char *pszLink);
 	int FindAnyLink(int iFrom, const char *pszLink);
+	IObjectQuery* FindAllLinks(int iFrom, const char *pszLink);
+	IObjectQuery* FindAllObjects(int iFlags, const char* pszName);
+	IObjectQuery* FindAllClosest(int iObj, const char* pszName);
+};
+
+class ClosestObjFilter
+{
+public:
+	bool operator() (int iObj) const;
+	bool UpdateIfCloser(int iObj);
+	bool Valid() const { return m_iObj != 0; }
+
+	ClosestObjFilter(int iObj, float fMaxDistance, SInterface<IPositionProperty>& pPosProp);
+	ClosestObjFilter(const ClosestObjFilter& rCpy)
+		: m_iObj(rCpy.m_iObj), m_fMaxSquared(rCpy.m_fMaxSquared), m_vPosition(rCpy.m_vPosition),
+		  m_pPosProp(rCpy.m_pPosProp)
+	{ }
+
+protected:
+	int m_iObj;
+	float m_fMaxSquared;
+	cScrVec m_vPosition;
+	SInterface<IPositionProperty> m_pPosProp;
+
+	float Distance(int iObj) const;
+
+};
+
+class ClosestZOffsetObjFilter
+{
+public:
+	bool operator() (int iObj) const;
+	bool UpdateIfCloser(int iObj);
+
+	ClosestZOffsetObjFilter(int iObj, float fMaxDistance, float fMaxHeight, SInterface<IPositionProperty>& pPosProp);
+	ClosestZOffsetObjFilter(const ClosestZOffsetObjFilter& rCpy)
+		: m_iObj(rCpy.m_iObj), m_fMaxSquared(rCpy.m_fMaxSquared), m_fMaxHeight(rCpy.m_fMaxHeight),
+		  m_vPosition(rCpy.m_vPosition), m_pPosProp(rCpy.m_pPosProp)
+	{ }
+
+protected:
+	int m_iObj;
+	float m_fMaxSquared, m_fMaxHeight;
+	cScrVec m_vPosition;
+	SInterface<IPositionProperty> m_pPosProp;
+
+	float Distance(int iObj, float *fHeight) const;
+
 };
 
 typedef int (__cdecl *MPrintfProc)(const char*, ...);

@@ -77,7 +77,7 @@ interface IScriptParamScriptService : IUnknown
 	// Recognizes ToObject strings (except "source") and:
 	// "*" archetype=>direct concrete descendants
 	// "@" archetype=>all concrete descendants
-	// "&" flavor=>link query, "&?" flavor=>one random link
+	// "&" flavor=>link query
 	// distance "<" archetype=>nearby objects
 	// distance "<" height "<" archetype=>nearby with max. Z-displacement
 	STDMETHOD_(IObjectQuery*,QueryObjects)(const char* pszValue, int iDest) PURE;
