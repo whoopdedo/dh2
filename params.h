@@ -88,15 +88,11 @@ private:
 	tParamCacheMap m_mapParamCache;
 	PropListenerHandle m_hListenerHandle;
 	int m_iUpdatingObj;
-	bool m_bEnabled;
 
 	static sDispatchListenerDesc sm_simlistenerdesc;
 
 	static int __cdecl SimListener(const sDispatchMsg* pSimMsg, const sDispatchListenerDesc* pData);
 	static void __stdcall PropertyListener(sPropertyListenMsg* pPropMsg, PropListenerData pData);
-
-	void Enable(void);
-	void Disable(void);
 
 	void Parse(tParamEntryMap& cache, const char* pszDN);
 	std::string Unparse(tParamEntryMap& cache);

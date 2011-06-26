@@ -46,9 +46,6 @@ bool cScriptParamScriptService::sm_initialized = false;
 
 int __cdecl cScriptParamScriptService::SimListener(const sDispatchMsg* pSimMsg, const sDispatchListenerDesc* pData)
 {
-	g_pfnMPrintf("DH2(%s): SimMsg %lu %lu\n",
-		reinterpret_cast<cScriptParamScriptService*>(pData->pData)->m_bEnabled?"on":"off",
-		pSimMsg->dwEventId, pSimMsg->dwDispatchId);
 	if (sm_initialized)
 	{
 		switch (pSimMsg->dwEventId)
@@ -66,9 +63,6 @@ int __cdecl cScriptParamScriptService::SimListener(const sDispatchMsg* pSimMsg, 
 
 void __stdcall cScriptParamScriptService::PropertyListener(sPropertyListenMsg* pPropMsg, PropListenerData pData)
 {
-	g_pfnMPrintf("DH2(%s): PropMsg %u %08lX %d:%d\n",
-		reinterpret_cast<cScriptParamScriptService*>(pData)->m_bEnabled?"on":"off",
-		pPropMsg->event, reinterpret_cast<ulong>(pPropMsg->pData), pPropMsg->iObjId, pPropMsg->iArchetype);
 	if (sm_initialized)
 	{
 		if (!(pPropMsg->event & 8))
@@ -84,8 +78,6 @@ void __stdcall cScriptParamScriptService::PropertyListener(sPropertyListenMsg* p
 
 cScriptParamScriptService::~cScriptParamScriptService()
 {
-	Disable();
-
 	m_pSimMan->Unlisten(&IID_IScriptParamScriptService);
 	m_pDNProp->Unlisten(m_hListenerHandle);
 
@@ -112,24 +104,8 @@ cScriptParamScriptService::cScriptParamScriptService(IUnknown* pIFace)
 	m_rand.seed(time(NULL));
 
 	m_iUpdatingObj = 0;
-	m_bEnabled = true;
 
 	sm_initialized = true;
-}
-
-void cScriptParamScriptService::Enable(void)
-{
-	m_bEnabled = true;
-	Reset();
-}
-
-void cScriptParamScriptService::Disable(void)
-{
-	if (m_bEnabled)
-	{
-		Reset();
-		m_bEnabled = false;
-	}
 }
 
 // BaseScriptService functions
@@ -918,23 +894,16 @@ void cScriptParamScriptService::Write(int iObj)
 const string* cScriptParamScriptService::RetrieveCached(int iObj, const string& sParamName)
 {
 	const string* psParam = NULL;
-	if (m_bEnabled)
+	tParamCacheMap::const_iterator cached_entry = m_mapParamCache.find(iObj);
+	if (cached_entry != m_mapParamCache.end())
 	{
-		tParamCacheMap::const_iterator cached_entry = m_mapParamCache.find(iObj);
-		if (cached_entry != m_mapParamCache.end())
+		tParamEntryMap::const_iterator param_entry = cached_entry->second.find(sParamName);
+		if (param_entry != cached_entry->second.end())
 		{
-			tParamEntryMap::const_iterator param_entry = cached_entry->second.find(sParamName);
-			if (param_entry != cached_entry->second.end())
-			{
-				psParam = &(param_entry->second);
-			}
-		}
-		else
-		{
-			psParam = ReadParam(iObj, sParamName);
+			psParam = &(param_entry->second);
 		}
 	}
-	else // not enabled
+	else
 	{
 		psParam = ReadParam(iObj, sParamName);
 	}
@@ -980,20 +949,12 @@ const string* cScriptParamScriptService::RetrieveSingle(int iObj, const string& 
 void cScriptParamScriptService::Update(int iObj, const string& sParamName, const string* sParamValue)
 {
 	tParamEntryMap* cache;
-	if (m_bEnabled)
+	tParamCacheMap::iterator cached_entry = m_mapParamCache.find(iObj);
+	if (cached_entry != m_mapParamCache.end())
 	{
-		tParamCacheMap::iterator cached_entry = m_mapParamCache.find(iObj);
-		if (cached_entry != m_mapParamCache.end())
-		{
-			cache = &(cached_entry->second);
-		}
-		else
-		{
-			cache = &(m_mapParamCache[iObj]);
-			Read(iObj);
-		}
+		cache = &(cached_entry->second);
 	}
-	else // not enabled
+	else
 	{
 		cache = &(m_mapParamCache[iObj]);
 		Read(iObj);
@@ -1006,23 +967,15 @@ void cScriptParamScriptService::Update(int iObj, const string& sParamName, const
 void cScriptParamScriptService::Remove(int iObj, const string& sParamName)
 {
 	tParamEntryMap* cache;
-	if (m_bEnabled)
+	tParamCacheMap::iterator cached_entry = m_mapParamCache.find(iObj);
+	if (cached_entry != m_mapParamCache.end())
 	{
-		tParamCacheMap::iterator cached_entry = m_mapParamCache.find(iObj);
-		if (cached_entry != m_mapParamCache.end())
-		{
-			cache = &(cached_entry->second);
-		}
-		else
-		{
-			cache = &(m_mapParamCache[iObj]);
-			Read(iObj);
-		}
+		cache = &(cached_entry->second);
 	}
-	else // not enabled
+	else
 	{
-			cache = &(m_mapParamCache[iObj]);
-			Read(iObj);
+		cache = &(m_mapParamCache[iObj]);
+		Read(iObj);
 	}
 
 	cache->erase(sParamName);
@@ -1031,7 +984,7 @@ void cScriptParamScriptService::Remove(int iObj, const string& sParamName)
 
 void cScriptParamScriptService::Touch(int iObj)
 {
-	if (m_bEnabled && iObj != m_iUpdatingObj)
+	if (iObj != m_iUpdatingObj)
 	{
 		tParamCacheMap::iterator cached_entry = m_mapParamCache.find(iObj);
 		if (cached_entry != m_mapParamCache.end())
