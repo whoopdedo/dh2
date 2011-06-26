@@ -19,7 +19,11 @@
  *
  *****************************************************************************/
 
+#include <lg/config.h>
+#include <lg/objstd.h>
+#include <lg/scrmanagers.h>
 #include "dh2.h"
+#include "params.h"
 #include <windows.h>
 
 IMalloc* g_pMalloc = NULL;
@@ -29,12 +33,19 @@ Bool __cdecl DH2Init(IScriptMan* pScriptMan, IMalloc* pMalloc)
 {
 	try
 	{
+		if (!g_pMalloc)
+			g_pMalloc = pMalloc;
 		if (! cDH2ScriptService::sm_initialized)
 		{
-			g_pMalloc = pMalloc;
 			cDH2ScriptService* pDH2 = new cDH2ScriptService(pScriptMan);
 			pScriptMan->ExposeService(pDH2, IID_IDarkHookScriptService);
 			pDH2->Init(); // why doesn't ExposeService do this?
+		}
+		if (! cScriptParamScriptService::sm_initialized)
+		{
+			cScriptParamScriptService* pScrParams = new cScriptParamScriptService(pScriptMan);
+			pScriptMan->ExposeService(pScrParams, IID_IScriptParamScriptService);
+			pScrParams->Init(); // why doesn't ExposeService do this?
 		}
 	}
 	catch (...)

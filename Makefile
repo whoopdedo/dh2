@@ -50,8 +50,8 @@ endif
 
 ALL = dh2.osl libdh2.a
 
-DLLSRCS = dh2.cpp dh2dll.cpp dh2lib.cpp
-DLLOBJS = dh2_exp.o dh2.o dh2dll.o dh2_res.o
+DLLSRCS = dh2.cpp dh2dll.cpp dh2lib.cpp params.cpp
+DLLOBJS = dh2_exp.o dh2.o params.o dh2dll.o dh2_res.o
 
 .INTERMEDIATE:
 
@@ -96,9 +96,9 @@ libscriptparam.a: paramlib.o
 
 dh2.o: dh2.cpp dh2.h darkhook.h objprop.h
 
-dh2dll.o: dh2dll.cpp dh2.h darkhook.h
+dh2dll.o: dh2dll.cpp dh2.h darkhook.h params.h scriptparam.h
 
-dh2lib.o: dh2lib.cpp darkhook.h
+dh2lib.o: dh2lib.cpp darkhook.h scriptparam.h
 
 params.o: params.cpp params.h scriptparam.h strnocase.h
 

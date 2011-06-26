@@ -20,6 +20,7 @@
  *****************************************************************************/
 #define INITGUID 1
 #include "darkhook.h"
+#include "scriptparam.h"
 #include <windows.h>
 
 /* OSL sorts next to OSM nicely,
