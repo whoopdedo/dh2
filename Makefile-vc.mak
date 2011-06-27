@@ -46,8 +46,8 @@ LGLIB = lg.lib
 
 ALL = dh2.osl dh2.lib
 
-DLLSRCS = dh2.cpp dh2dll.cpp dh2lib.cpp
-DLLOBJS = dh2.obj dh2dll.obj
+DLLSRCS = dh2.cpp dh2dll.cpp dh2lib.cpp params.cpp
+DLLOBJS = dh2.obj params.obj dh2dll.obj
 DLLRES = dh2.res
 
 LIBSRCS = dh2lib.cpp
@@ -76,7 +76,9 @@ dh2.lib: $(LIBOBJS)
 
 dh2.obj: dh2.cpp dh2.h darkhook.h objprop.h
 
-dh2dll.obj: dh2dll.cpp dh2.h darkhook.h
+dh2dll.obj: dh2dll.cpp dh2.h darkhook.h params.h scriptparam.h
 
-dh2lib.obj: dh2lib.cpp darkhook.h
+dh2lib.obj: dh2lib.cpp darkhook.h scriptparam.h
+
+params.obj: params.cpp params.h scriptparam.h strnocase.h objquery.h
 

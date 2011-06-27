@@ -100,7 +100,7 @@ dh2dll.o: dh2dll.cpp dh2.h darkhook.h params.h scriptparam.h
 
 dh2lib.o: dh2lib.cpp darkhook.h scriptparam.h
 
-params.o: params.cpp params.h scriptparam.h strnocase.h
+params.o: params.cpp params.h scriptparam.h strnocase.h objquery.h
 
 paramdll.o: paramdll.cpp params.h scriptparam.h
 
