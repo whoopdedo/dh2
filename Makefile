@@ -35,7 +35,7 @@ DEFINES = -DWINVER=0x0400 -D_WIN32_WINNT=0x0400 -DWIN32_LEAN_AND_MEAN
 INCLUDES = -I. -I$(LGDIR)
 LIBS = -luuid
 ARFLAGS = rc
-LDFLAGS = -mwindows -mdll -L$(LGDIR)
+LDFLAGS = -mwindows -mdll -static-libgcc -static-libstdc++ -L$(LGDIR)
 CFLAGS = -W -Wall -masm=intel -std=gnu++0x
 DLLFLAGS = --add-underscore
 ifdef DEBUG
